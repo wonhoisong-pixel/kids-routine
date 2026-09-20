@@ -117,8 +117,8 @@
     margin-left:34px;
   }
 
-  .top-controls{display:flex; gap:8px; align-items:center;}
-  .mode-toggle, .pool-manage-btn{
+  .top-controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .mode-toggle, .pool-manage-btn, .shop-manage-btn, .shop-tab-btn{
     display:flex;
     align-items:center;
     gap:8px;
@@ -131,6 +131,7 @@
     color:var(--ink-soft);
   }
   .mode-toggle.mom-active{background:var(--ink);color:#fff;}
+  .shop-tab-btn.active{background:#FF8A65; color:#fff;}
 
   /* ---------- Period tabs ---------- */
   .period-tabs{display:flex;gap:10px;}
@@ -172,6 +173,7 @@
   .sky--morning{background:linear-gradient(180deg,#FFE3B0 0%, #FFC7A6 55%, #FFD9C4 100%);}
   .sky--day{background:linear-gradient(180deg,#CDEBFB 0%, #A9DEF9 60%, #E7F7FF 100%);}
   .sky--evening{background:linear-gradient(180deg,#2A2B63 0%, #3C3D82 55%, #4A4B8C 100%);}
+  .sky--shop{background:linear-gradient(180deg,#FFE5EC 0%, #FFD1DC 60%, #FFF0F3 100%);}
   .sky--evening .section-title, .sky--evening .progress-caption{color:#F1EEFF;}
   .sky-deco{position:absolute;inset:0;pointer-events:none;opacity:0.9;}
   .star{
@@ -284,7 +286,6 @@
     font-size:14px;
     padding:6px 2px;
   }
-  .sky--evening .empty-note, .sky--evening .add-card{color:rgba(241,238,255,0.8); border-color:rgba(241,238,255,0.4);}
 
   /* ---------- Modal ---------- */
   .modal-overlay{
@@ -441,7 +442,9 @@
     </div>
     <div class="profiles" id="profileList"></div>
     <div class="top-controls">
+      <button class="shop-tab-btn" id="shopTabBtn">🛒 쇼핑리스트</button>
       <button class="pool-manage-btn hidden" id="poolManageBtn">📚 루틴 풀 관리</button>
+      <button class="shop-manage-btn hidden" id="shopManageBtn">🛒 쇼핑 마스터 관리</button>
       <button class="mode-toggle" id="modeToggle">👩 엄마 모드</button>
     </div>
   </div>
@@ -496,6 +499,21 @@
   </div>
 </div>
 
+<!-- 쇼핑리스트 추가 모달 -->
+<div class="modal-overlay hidden" id="addShopOverlay">
+  <div class="modal">
+    <h2>쇼핑리스트에 추가하기</h2>
+    <p class="sub">쇼핑 마스터에서 필요한 품목을 골라보세요</p>
+
+    <div class="field-label">쇼핑 마스터에서 가져오기</div>
+    <div class="pool-select-list" id="shopMasterSelectList"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelAddShop">닫기</button>
+    </div>
+  </div>
+</div>
+
 <!-- 루틴 풀 관리 모달 -->
 <div class="modal-overlay hidden" id="poolManageOverlay">
   <div class="modal">
@@ -517,6 +535,31 @@
 
     <div class="modal-actions" style="margin-top:16px;">
       <button class="btn btn-ghost" id="closePoolManage">완료</button>
+    </div>
+  </div>
+</div>
+
+<!-- 쇼핑 마스터 관리 모달 -->
+<div class="modal-overlay hidden" id="shopManageOverlay">
+  <div class="modal">
+    <h2>쇼핑 마스터(Master) 관리</h2>
+    <p class="sub">자주 구매하는 쇼핑 품목을 미리 등록해두세요</p>
+
+    <div class="field-label">새로운 쇼핑 품목 만들기</div>
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <input type="text" class="text-input" id="newShopMasterInput" placeholder="예: 우유" maxlength="14" style="flex:1;">
+    </div>
+    
+    <div class="field-label">아이콘 선택</div>
+    <div class="emoji-grid" id="shopMasterEmojiGrid"></div>
+
+    <button class="btn btn-primary" id="confirmAddShopMaster" style="width:100%; margin-top:14px;">마스터에 품목 추가하기</button>
+
+    <div class="field-label" style="margin-top:20px;">등록된 쇼핑 마스터 목록</div>
+    <div class="pool-select-list" id="existingShopMasterList" style="max-height:140px;"></div>
+
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn btn-ghost" id="closeShopManage">완료</button>
     </div>
   </div>
 </div>
@@ -599,7 +642,8 @@
 
   const EMOJI_CHOICES = [
     '🦷','👕','🛏️','🚿','🍳','📚','📖','🧸','🚰','🏃','🛁','🍽️','🎒','⏰','🌙','🧴','🧦',
-    '🧹','✏️','🎨','🎹','🎻','🎸','🥋','⚽','🧼','🗑️','🥛','🍎','💊','🧩','🎯','💻','🧹'
+    '🧹','✏️','🎨','🎹','🎻','🎸','🥋','⚽','🧼','🗑️','🥛','🍎','💊','🧩','🎯','💻','🧹',
+    '🛒','🍎','🍌','🍞','🥛','eggs','🥩','🧀','🥕','🥦','🥔','🧅','🧄','🍅','🥒','🍗','🐟','🍜','🧃','☕','🧻','🧼','🪥','🧴'
   ];
   const PROFILE_EMOJI = ['🐻','🐰','🦊','🐱','🐶','🦁','🐼','🦄','🐸','🐨'];
   const PROFILE_COLORS = ['#FFD9C4','#CDEBFB','#D9F2E3','#F4D9FA','#FFF1B8','#E0D7FA'];
@@ -658,7 +702,16 @@
           ]
         }
       },
-      completions:{ date: todayKey(), data:{} }
+      completions:{ date: todayKey(), data:{} },
+      // 🛒 쇼핑리스트 관련 신규 데이터 구조 (기존 구조를 침범하지 않음)
+      shopMaster:[
+        {id:'sm1', text:'우유', emoji:'🥛'},
+        {id:'sm2', text:'달걀', emoji:'🍳'},
+        {id:'sm3', text:'식빵', emoji:'🍞'},
+        {id:'sm4', text:'사과', emoji:'🍎'},
+        {id:'sm5', text:'휴지', emoji:'🧻'}
+      ],
+      shoppingList:[]
     };
   }
 
@@ -676,7 +729,9 @@
   let currentProfileId = null;
   let currentPeriod = 'morning';
   let momMode = false;
+  let isShopMode = false; // 🛒 쇼핑리스트 모드 여부
   let pickedPoolEmoji = EMOJI_CHOICES[0];
+  let pickedShopMasterEmoji = EMOJI_CHOICES[0];
   let pickedRoutinePeriod = 'morning';
   let pickedProfileEmoji = PROFILE_EMOJI[0];
   let pickedProfileColor = PROFILE_COLORS[0];
@@ -698,6 +753,8 @@
     if (!state.routines) state.routines = defaultData().routines;
     if (!state.completions) state.completions = { date: todayKey(), data:{} };
     if (!state.completions.data) state.completions.data = {};
+    if (!state.shopMaster) state.shopMaster = defaultData().shopMaster;
+    if (!state.shoppingList) state.shoppingList = [];
     
     state.profiles.forEach(p => {
       if (!state.routines[p.id]) {
@@ -725,6 +782,8 @@
         if (!state.routines) state.routines = defaultData().routines;
         if (!state.completions) state.completions = { date: todayKey(), data:{} };
         if (!state.completions.data) state.completions.data = {};
+        if (!state.shopMaster) state.shopMaster = defaultData().shopMaster;
+        if (!state.shoppingList) state.shoppingList = [];
         renderProfiles();
         renderRoutines();
         updateProgress();
@@ -749,9 +808,17 @@
       col.style.alignItems = 'center';
 
       const btn = document.createElement('button');
-      btn.className = 'profile-btn' + (p.id === currentProfileId ? ' active' : '');
+      btn.className = 'profile-btn' + (p.id === currentProfileId && !isShopMode ? ' active' : '');
       btn.innerHTML = `<span class="avatar" style="background:${p.color}">${p.emoji}</span><span class="name">${escapeHtml(p.name)}</span>`;
-      btn.addEventListener('click', () => { currentProfileId = p.id; renderProfiles(); renderRoutines(); updateProgress(); });
+      btn.addEventListener('click', () => { 
+        isShopMode = false;
+        document.getElementById('shopTabBtn').classList.remove('active');
+        currentProfileId = p.id; 
+        renderProfiles(); 
+        renderSkyTheme();
+        renderRoutines(); 
+        updateProgress(); 
+      });
       col.appendChild(btn);
 
       if (momMode && state.profiles.length > 1){
@@ -790,17 +857,24 @@
   /* ---------------- Render: sky theme ---------------- */
   function renderSkyTheme(){
     const sky = document.getElementById('sky');
+    const periodTabs = document.getElementById('periodTabs');
     if(!sky) return;
-    sky.className = 'sky sky--' + currentPeriod;
 
-    document.querySelectorAll('.period-tab').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.period === currentPeriod);
-    });
+    if (isShopMode) {
+      sky.className = 'sky sky--shop';
+      if(periodTabs) periodTabs.classList.add('hidden');
+    } else {
+      sky.className = 'sky sky--' + currentPeriod;
+      if(periodTabs) periodTabs.classList.remove('hidden');
+      document.querySelectorAll('.period-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.period === currentPeriod);
+      });
+    }
 
     const deco = document.getElementById('skyDeco');
     if(deco){
       deco.innerHTML = '';
-      if (currentPeriod === 'evening'){
+      if (!isShopMode && currentPeriod === 'evening'){
         for (let i=0;i<18;i++){
           const s = document.createElement('div');
           s.className = 'star';
@@ -815,16 +889,31 @@
       }
     }
     const captionEl = document.getElementById('progressCaption');
-    if(captionEl) captionEl.textContent = PERIOD_LABEL[currentPeriod] + ' 루틴 완료율';
+    if(captionEl) {
+      if (isShopMode) {
+        captionEl.textContent = '쇼핑 구매 완료율';
+      } else {
+        captionEl.textContent = PERIOD_LABEL[currentPeriod] + ' 루틴 완료율';
+      }
+    }
   }
 
-  /* ---------------- Render: routines ---------------- */
+  /* ---------------- Render: routines or shopping list ---------------- */
   function currentRoutines(){
+    if (isShopMode) return state.shoppingList || [];
     if (!state || !state.routines || !currentProfileId) return [];
     if (!state.routines[currentProfileId]) return [];
     return state.routines[currentProfileId][currentPeriod] || [];
   }
   function completionMap(){
+    if (isShopMode) {
+      // 쇼핑리스트는 자체적으로 completed 속성 관리
+      const map = {};
+      (state.shoppingList || []).forEach(item => {
+        if (item.completed) map[item.id] = true;
+      });
+      return map;
+    }
     if (!state || !state.completions || !state.completions.data || !currentProfileId) return {};
     if (!state.completions.data[currentProfileId]) return {};
     return state.completions.data[currentProfileId][currentPeriod] || {};
@@ -841,7 +930,7 @@
       list = currentRoutines();
       done = completionMap();
     } catch(e) {
-      console.error("Routine load error:", e);
+      console.error("Load error:", e);
     }
 
     const blobs = ['blob-1','blob-2','blob-3','blob-4'];
@@ -849,43 +938,54 @@
     if (list.length === 0 && !momMode){
       const note = document.createElement('div');
       note.className = 'empty-note';
-      note.textContent = '아직 등록된 루틴이 없어요. 엄마에게 추가해달라고 해보세요!';
+      note.textContent = isShopMode ? '등록된 쇼핑리스트가 없어요.' : '아직 등록된 루틴이 없어요. 엄마에게 추가해달라고 해보세요!';
       grid.appendChild(note);
     }
 
     list.forEach((r, idx) => {
       const card = document.createElement('div');
-      const isDone = !!done[r.id];
+      const isDone = isShopMode ? !!r.completed : !!done[r.id];
       card.className = 'routine-card ' + blobs[idx % 4] + (isDone ? ' completed' : '');
       card.innerHTML = `
         <span class="r-badge">✓</span>
         <span class="r-emoji">${r.emoji || '✨'}</span>
         <span class="r-text">${escapeHtml(r.text || '')}</span>
       `;
+      
+      // 삭제 버튼 (루틴 혹은 쇼핑리스트 아이템)
       if (momMode){
         const del = document.createElement('button');
         del.className = 'r-del';
         del.innerHTML = '×';
         del.addEventListener('click', (ev) => {
           ev.stopPropagation();
-          if (confirm(`'${r.text}' 루틴을 삭제할까요?`)) deleteRoutine(r.id);
+          if (confirm(`'${r.text}' 항목을 삭제할까요?`)) {
+            if (isShopMode) deleteShopItem(r.id);
+            else deleteRoutine(r.id);
+          }
         });
         card.appendChild(del);
       }
-      card.addEventListener('click', () => toggleRoutine(r.id, card));
+
+      card.addEventListener('click', () => {
+        if (isShopMode) toggleShopItem(r.id, card);
+        else toggleRoutine(r.id, card);
+      });
       grid.appendChild(card);
     });
 
     if (momMode){
       const addCard = document.createElement('div');
       addCard.className = 'add-card';
-      addCard.innerHTML = `<span class="plus">+</span><span>루틴 추가하기</span>`;
-      addCard.addEventListener('click', () => openAddRoutineModal(currentPeriod));
+      addCard.innerHTML = `<span class="plus">+</span><span>${isShopMode ? '쇼핑 품목 추가하기' : '루틴 추가하기'}</span>`;
+      addCard.addEventListener('click', () => {
+        if (isShopMode) openAddShopModal();
+        else openAddRoutineModal(currentPeriod);
+      });
       grid.appendChild(addCard);
     }
   }
 
-  /* 🌟 [수정 포인트] 완료 상태 토글 함수 방어 및 안전장치 강화 */
   async function toggleRoutine(routineId, cardEl){
     if (!currentProfileId) return;
     
@@ -916,6 +1016,20 @@
     }
   }
 
+  async function toggleShopItem(itemId, cardEl){
+    const item = (state.shoppingList || []).find(i => i.id === itemId);
+    if (!item) return;
+    item.completed = !item.completed;
+    await saveData();
+
+    cardEl.classList.toggle('completed', item.completed);
+    cardEl.classList.remove('pop');
+    void cardEl.offsetWidth;
+    cardEl.classList.add('pop');
+
+    updateProgress();
+  }
+
   async function deleteRoutine(routineId){
     if(!state.routines[currentProfileId] || !state.routines[currentProfileId][currentPeriod]) return;
     const arr = state.routines[currentProfileId][currentPeriod];
@@ -928,11 +1042,18 @@
     updateProgress();
   }
 
+  async function deleteShopItem(itemId){
+    state.shoppingList = (state.shoppingList || []).filter(i => i.id !== itemId);
+    await saveData();
+    renderRoutines();
+    updateProgress();
+  }
+
   /* ---------------- Progress ring ---------------- */
   function updateProgress(){
     const list = currentRoutines();
     const done = completionMap();
-    const doneCount = list.filter(r => done[r.id]).length;
+    const doneCount = list.filter(r => isShopMode ? r.completed : done[r.id]).length;
     const total = list.length;
     const pct = total === 0 ? 0 : Math.round((doneCount/total)*100);
 
@@ -949,7 +1070,7 @@
 
   /* ---------------- Celebration ---------------- */
   function celebrate(){
-    showToast(PERIOD_LABEL[currentPeriod] + ' 루틴 완성! 참 잘했어요 🎉');
+    showToast((isShopMode ? '쇼핑 품목' : PERIOD_LABEL[currentPeriod] + ' 루틴') + ' 완성! 참 잘했어요 🎉');
     const colors = ['#FF8A65','#FFD166','#6FCF97','#5EC1E8','#C58AF9'];
     for (let i=0;i<24;i++){
       const p = document.createElement('div');
@@ -973,18 +1094,24 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
   }
 
-  /* ---------------- Mode toggle ---------------- */
+  /* ---------------- Mode toggle & Shop tab toggle ---------------- */
   function renderModeToggle(){
     const btn = document.getElementById('modeToggle');
     const poolBtn = document.getElementById('poolManageBtn');
+    const shopManageBtn = document.getElementById('shopManageBtn');
     if(!btn) return;
     btn.textContent = momMode ? '🧒 아이 모드로' : '👩 엄마 모드';
     btn.classList.toggle('mom-active', momMode);
     if(poolBtn){
-      if(momMode) poolBtn.classList.remove('hidden');
+      if(momMode && !isShopMode) poolBtn.classList.remove('hidden');
       else poolBtn.classList.add('hidden');
     }
+    if(shopManageBtn){
+      if(momMode && isShopMode) shopManageBtn.classList.remove('hidden');
+      else shopManageBtn.classList.add('hidden');
+    }
   }
+
   const modeToggleBtn = document.getElementById('modeToggle');
   if(modeToggleBtn){
     modeToggleBtn.addEventListener('click', () => {
@@ -995,9 +1122,28 @@
     });
   }
 
+  // 🛒 쇼핑리스트 탭 전환 버튼 이벤트
+  const shopTabBtn = document.getElementById('shopTabBtn');
+  if(shopTabBtn){
+    shopTabBtn.addEventListener('click', () => {
+      isShopMode = !isShopMode;
+      shopTabBtn.classList.toggle('active', isShopMode);
+      if(isShopMode) {
+        document.querySelectorAll('.profile-btn').forEach(b => b.classList.remove('active'));
+      } else {
+        renderProfiles();
+      }
+      renderModeToggle();
+      renderSkyTheme();
+      renderRoutines();
+      updateProgress();
+    });
+  }
+
   /* ---------------- Period tabs ---------------- */
   document.querySelectorAll('.period-tab').forEach(btn => {
     btn.addEventListener('click', () => {
+      if (isShopMode) return;
       currentPeriod = btn.dataset.period;
       renderSkyTheme();
       renderRoutines();
@@ -1026,7 +1172,7 @@
     if(!wrap) return;
     wrap.innerHTML = '';
     if(!state.routinePool || state.routinePool.length === 0){
-      wrap.innerHTML = '<div style="padding:10px; text-align:center; color:var(--ink-soft);">등록된 루틴 풀이 없습니다. ' + (momMode ? '상단 [루틴 풀 관리]에서 추가해주세요.' : '') + '</div>';
+      wrap.innerHTML = '<div style="padding:10px; text-align:center; color:var(--ink-soft);">등록된 루틴 풀이 없습니다.</div>';
       return;
     }
     state.routinePool.forEach(item => {
@@ -1067,6 +1213,54 @@
   if(cancelAddRoutine){
     cancelAddRoutine.addEventListener('click', () => {
       if(addRoutineOverlay) addRoutineOverlay.classList.add('hidden');
+    });
+  }
+
+  /* ---------------- 🛒 Shopping List Selection Modal ---------------- */
+  const addShopOverlay = document.getElementById('addShopOverlay');
+  function openAddShopModal(){
+    renderShopMasterSelectList();
+    if(addShopOverlay) addShopOverlay.classList.remove('hidden');
+  }
+  function renderShopMasterSelectList(){
+    const wrap = document.getElementById('shopMasterSelectList');
+    if(!wrap) return;
+    wrap.innerHTML = '';
+    if(!state.shopMaster || state.shopMaster.length === 0){
+      wrap.innerHTML = '<div style="padding:10px; text-align:center; color:var(--ink-soft);">등록된 쇼핑 마스터 품목이 없습니다. 상단 [쇼핑 마스터 관리]에서 추가해주세요.</div>';
+      return;
+    }
+    state.shopMaster.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'pool-item-row';
+      row.innerHTML = `<span>${item.emoji} ${escapeHtml(item.text)}</span>`;
+      const addBtn = document.createElement('button');
+      addBtn.textContent = '담기';
+      addBtn.addEventListener('click', async () => {
+        if (!state.shoppingList) state.shoppingList = [];
+        
+        state.shoppingList.push({ 
+          id: uid('sh'), 
+          text: item.text, 
+          emoji: item.emoji,
+          completed: false
+        });
+
+        await saveData();
+        
+        if(addShopOverlay) addShopOverlay.classList.add('hidden');
+        renderRoutines(); 
+        updateProgress();
+        showToast(`'${item.text}' 쇼핑리스트에 담겼어요 🛒`);
+      });
+      row.appendChild(addBtn);
+      wrap.appendChild(row);
+    });
+  }
+  const cancelAddShop = document.getElementById('cancelAddShop');
+  if(cancelAddShop){
+    cancelAddShop.addEventListener('click', () => {
+      if(addShopOverlay) addShopOverlay.classList.add('hidden');
     });
   }
 
@@ -1127,6 +1321,66 @@
   if(closePoolManage){
     closePoolManage.addEventListener('click', () => {
       if(poolManageOverlay) poolManageOverlay.classList.add('hidden');
+    });
+  }
+
+  /* ---------------- 🛒 Shopping Master Manage Modal ---------------- */
+  const shopManageOverlay = document.getElementById('shopManageOverlay');
+  const shopManageBtn = document.getElementById('shopManageBtn');
+  if(shopManageBtn){
+    shopManageBtn.addEventListener('click', () => {
+      pickedShopMasterEmoji = EMOJI_CHOICES[0];
+      const inputEl = document.getElementById('newShopMasterInput');
+      if(inputEl) inputEl.value = '';
+      buildEmojiGrid('shopMasterEmojiGrid', EMOJI_CHOICES, pickedShopMasterEmoji, (e) => pickedShopMasterEmoji = e);
+      renderExistingShopMasterList();
+      if(shopManageOverlay) shopManageOverlay.classList.remove('hidden');
+    });
+  }
+
+  function renderExistingShopMasterList(){
+    const wrap = document.getElementById('existingShopMasterList');
+    if(!wrap) return;
+    wrap.innerHTML = '';
+    if(!state.shopMaster) return;
+    state.shopMaster.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'pool-item-row';
+      row.innerHTML = `<span>${item.emoji} ${escapeHtml(item.text)}</span>`;
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '삭제';
+      delBtn.style.background = '#e0684f';
+      delBtn.addEventListener('click', async () => {
+        if (confirm(`'${item.text}' 마스터 품목을 삭제할까요?`)){
+          state.shopMaster = state.shopMaster.filter(p => p.id !== item.id);
+          await saveData();
+          renderExistingShopMasterList();
+        }
+      });
+      row.appendChild(delBtn);
+      wrap.appendChild(row);
+    });
+  }
+
+  const confirmAddShopMaster = document.getElementById('confirmAddShopMaster');
+  if(confirmAddShopMaster){
+    confirmAddShopMaster.addEventListener('click', async () => {
+      const inputEl = document.getElementById('newShopMasterInput');
+      if(!inputEl) return;
+      const name = inputEl.value.trim();
+      if (!name){ alert('품목 이름을 입력해주세요.'); return; }
+      if (!state.shopMaster) state.shopMaster = [];
+      state.shopMaster.push({ id: uid('sm'), text: name, emoji: pickedShopMasterEmoji });
+      await saveData();
+      inputEl.value = '';
+      renderExistingShopMasterList();
+      showToast('새로운 쇼핑 마스터 품목이 추가되었어요!');
+    });
+  }
+  const closeShopManage = document.getElementById('closeShopManage');
+  if(closeShopManage){
+    closeShopManage.addEventListener('click', () => {
+      if(shopManageOverlay) shopManageOverlay.classList.add('hidden');
     });
   }
 
